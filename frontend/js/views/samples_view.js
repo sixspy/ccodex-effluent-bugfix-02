@@ -2,12 +2,19 @@ export const samplesViewTemplate = `
   <div class="grid-2">
     <div class="panel">
       <h3>采样批次</h3>
+      <div class="kv">
+        <span>日切日</span><span>{{ daycut.day || "—" }}</span>
+        <span>日切状态</span><span :class="daycut.status==='关闭'?'fail':'pass'">{{ daycut.status || "—" }}</span>
+        <span>当日正式流量 m3/d</span><span>{{ daycut.formal_flow_m3 }}</span>
+        <span>影子草案 m3/d</span><span>{{ daycut.draft_flow_m3 }}</span>
+      </div>
       <table>
-        <thead><tr><th>编号</th><th>口</th><th>许可</th><th>流量</th><th>状态</th><th>代</th></tr></thead>
+        <thead><tr><th>编号</th><th>口</th><th>许可</th><th>流量</th><th>当日流量 m3</th><th>日</th><th>状态</th><th>代</th></tr></thead>
         <tbody>
           <tr v-for="s in samples" :key="s.id" @click="loadSample(s.id)" style="cursor:pointer">
             <td>{{ s.sample_code }}</td><td>{{ s.outfall_code }}</td><td>{{ s.permit_ref }}</td>
-            <td>{{ s.flow_m3h }}</td><td :class="sampleClass(s.status)">{{ s.status }}</td>
+            <td>{{ s.flow_m3h }}</td><td>{{ s.day_flow_m3 }}</td><td>{{ s.day }}</td>
+            <td :class="sampleClass(s.status)">{{ s.status }}</td>
             <td>{{ s.generation }}</td>
           </tr>
         </tbody>

@@ -6,6 +6,7 @@ import json
 from fastapi import APIRouter, HTTPException
 
 from auth import AuthHeader, require_user, require_writer
+from daycut_core import daycut_snapshot, sample_day
 from db import connect, now_iso, write_audit
 from locks import release, require_lock
 from models import SampleIn
@@ -49,8 +50,10 @@ def list_samples(authorization: AuthHeader = None, status: str | None = None):
         for r in rows:
             d = dict(r)
             d["metrics"] = json.loads(d["metrics"] or "{}")
+            d["day"] = sample_day(d.get("created_at"))
+            d["day_flow_m3"] = round(float(d["flow_m3h"]) * 24.0, 3)
             items.append(d)
-        return {"items": items}
+        return {"items": items, "daycut": daycut_snapshot(conn)}
 
 
 @router.get("/api/samples/{sample_id}")

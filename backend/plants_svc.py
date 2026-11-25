@@ -4,6 +4,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException
 
 from auth import AuthHeader, require_user, require_writer
+from daycut_core import daycut_snapshot
 from db import connect, now_iso, write_audit
 from models import PlantIn
 
@@ -43,6 +44,7 @@ def get_plant(plant_id: int, authorization: AuthHeader = None):
             "plant": dict(row),
             "outfalls": [dict(o) for o in outfalls],
             "permits": [dict(p) for p in permits],
+            "daycut": daycut_snapshot(conn, plant_id=plant_id),
         }
 
 

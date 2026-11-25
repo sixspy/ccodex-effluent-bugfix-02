@@ -1,0 +1,24 @@
+[
+  {
+    "day": "2026-11-18",
+    "status": "关闭",
+    "closed_at": "2026-11-18T06:00:00",
+    "closed_by": "admin",
+    "note": "东城日切当班封窗：正式区流量零改",
+    "minutes": "当班日切修复纪要：日切关闭后正式区流量零改；修订只许影子流量草案；解封后原子升正；禁止并存双写；偏航拒写。"
+  },
+  {
+    "day": "2026-11-19",
+    "status": "开放",
+    "closed_at": null,
+    "closed_by": null,
+    "note": ""
+  },
+  {
+    "day": "2026-11-20",
+    "status": "开放",
+    "closed_at": null,
+    "closed_by": null,
+    "note": ""
+  }
+]

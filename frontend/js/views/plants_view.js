@@ -26,6 +26,10 @@ export const plantsViewTemplate = `
           <span>名称</span><span>{{ plantDetail.plant.name }}</span>
           <span>排放口</span><span>{{ plantDetail.outfalls.length }}</span>
           <span>许可</span><span>{{ plantDetail.permits.length }}</span>
+          <span>日切日</span><span>{{ plantDetail.daycut.day || "—" }}</span>
+          <span>日切状态</span><span :class="plantDetail.daycut.status==='关闭'?'fail':'pass'">{{ plantDetail.daycut.status || "—" }}</span>
+          <span>当日正式流量 m3/d</span><span>{{ plantDetail.daycut.formal_flow_m3 }}</span>
+          <span>影子草案 m3/d</span><span>{{ plantDetail.daycut.draft_flow_m3 }}</span>
         </div>
       </div>
     </div>

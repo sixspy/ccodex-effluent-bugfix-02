@@ -37,7 +37,9 @@ createApp({
     const labJobs = ref([]);
     const sludgeJobs = ref([]);
     const plantDetail = ref(null);
+    const outfallDetail = ref(null);
     const sampleDetail = ref(null);
+    const daycut = ref({ day: null, status: null, formal_flow_m3: 0, draft_flow_m3: 0 });
     const reconOne = ref(null);
     const reconAllItems = ref([]);
     const proofOne = ref(null);
@@ -128,6 +130,7 @@ createApp({
     async function refresh() {
       if (!token.value) return;
       dash.value = await api.dashboard();
+      daycut.value = dash.value.daycut || {};
       plants.value = (await api.plants()).items;
       outfalls.value = (await api.outfalls()).items;
       samples.value = (await api.samples()).items;
@@ -147,6 +150,7 @@ createApp({
     }
 
     async function loadPlant(id) { plantDetail.value = await api.plant(id); }
+    async function loadOutfall(id) { outfallDetail.value = await api.outfall(id); }
     async function loadSample(id) { sampleDetail.value = await api.sample(id); }
     async function createPlant() { await flash(() => api.createPlant(plantForm.value)); }
     async function createOutfall() { await flash(() => api.createOutfall(outfallForm.value)); }
@@ -218,13 +222,13 @@ createApp({
 
     return {
       token, user, username, password, err, actionErr, actionOk, tab, nav,
-      dash, plants, outfalls, samples, exceeds, releases, seals, permits,
-      lineageEdges, labJobs, sludgeJobs, plantDetail, sampleDetail,
+      dash, daycut, plants, outfalls, samples, exceeds, releases, seals, permits,
+      lineageEdges, labJobs, sludgeJobs, plantDetail, outfallDetail, sampleDetail,
       reconOne, reconAllItems, proofOne, reconCode, proofCode,
       plantForm, outfallForm, sampleForm, releaseForm, sealForm, permitForm,
       lineageForm, labForm, sludgeForm, releasableSamples, sealableSamples,
       login, logout, refresh, statusClass, sampleClass, fmtMetrics,
-      loadPlant, loadSample, createPlant, createOutfall, createSample,
+      loadPlant, loadOutfall, loadSample, createPlant, createOutfall, createSample,
       closeExceed, createRelease, createSeal, createPermit, createLineage,
       loadReconcile, loadReconcileOne, loadProof, enqueueLab, enqueueSludge,
     };

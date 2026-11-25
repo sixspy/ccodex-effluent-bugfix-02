@@ -4,6 +4,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException
 
 from auth import AuthHeader, require_user, require_writer
+from daycut_core import daycut_snapshot
 from db import connect, now_iso, write_audit
 from models import OutfallIn
 
@@ -44,7 +45,11 @@ def get_outfall(outfall_id: int, authorization: AuthHeader = None):
                WHERE outfall_id=? ORDER BY id DESC LIMIT 10""",
             (outfall_id,),
         ).fetchall()
-        return {"outfall": dict(row), "recent_samples": [dict(s) for s in recent]}
+        return {
+            "outfall": dict(row),
+            "recent_samples": [dict(s) for s in recent],
+            "daycut": daycut_snapshot(conn, outfall_id=outfall_id),
+        }
 
 
 @router.post("/api/outfalls")

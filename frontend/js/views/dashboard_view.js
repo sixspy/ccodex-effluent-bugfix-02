@@ -14,6 +14,17 @@ export const dashboardViewTemplate = `
     <div class="stat"><div class="n">{{ dash.side_pending || 0 }}</div><div class="l">旁路挂起</div></div>
   </div>
     <div class="panel">
+      <h3>日切日流量（与对账/采样/排放口/处理厂同源）</h3>
+      <div class="kv">
+        <span>日切日</span><span>{{ daycut.day || "—" }}</span>
+        <span>日切状态</span><span :class="daycut.status==='关闭'?'fail':'pass'">{{ daycut.status || "—" }}</span>
+        <span>正式日流量 m3/d</span><span>{{ daycut.formal_flow_m3 }}</span>
+        <span>影子草案 m3/d</span><span>{{ daycut.draft_flow_m3 }}</span>
+        <span>样本数</span><span>{{ daycut.sample_count }}</span>
+      </div>
+      <p v-if="daycut.minutes" class="muted">{{ daycut.minutes }}</p>
+    </div>
+    <div class="panel">
       <h3>产品骨架</h3>
       <p class="muted">{{ (dash.meta && dash.meta.skeleton) || "—" }}</p>
     </div>`;

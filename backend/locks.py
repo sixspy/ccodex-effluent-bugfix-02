@@ -1,5 +1,7 @@
-"""排放批争用锁。"""
+"""排放批争用锁（原子抢占，败方只记争用痕）。"""
 from __future__ import annotations
+
+import sqlite3
 
 from fastapi import APIRouter, HTTPException
 
@@ -10,21 +12,31 @@ router = APIRouter(tags=["locks"])
 
 
 def require_lock(conn, lock_key: str, holder: str) -> None:
-    row = conn.execute(
-        "SELECT holder FROM effluent_locks WHERE lock_key=?", (lock_key,)
-    ).fetchone()
-    if row and row["holder"] != holder:
+    """原子抢锁：靠主键唯一约束仲裁，禁止 SELECT-再-INSERT 竞态。"""
+    for _ in range(3):
+        try:
+            conn.execute(
+                "INSERT INTO effluent_locks(lock_key,holder,acquired_at) VALUES (?,?,?)",
+                (lock_key, holder, now_iso()),
+            )
+            return
+        except sqlite3.IntegrityError:
+            pass
+        row = conn.execute(
+            "SELECT holder FROM effluent_locks WHERE lock_key=?", (lock_key,)
+        ).fetchone()
+        if row is None:
+            continue  # 持有人刚释放，重试抢占
+        if row["holder"] == holder:
+            return  # 同会话重入
         conn.execute(
             """INSERT INTO contention_log(lock_key,actor,action,detail,created_at)
                VALUES (?,?,?,?,?)""",
             (lock_key, holder, "争用失败", f"持有人={row['holder']}", now_iso()),
         )
+        conn.commit()  # 争用痕须先落盘再做事务回滚
         raise HTTPException(409, f"锁被占用：{lock_key} 持有人 {row['holder']}")
-    if not row:
-        conn.execute(
-            "INSERT INTO effluent_locks(lock_key,holder,acquired_at) VALUES (?,?,?)",
-            (lock_key, holder, now_iso()),
-        )
+    raise HTTPException(409, f"锁争用：{lock_key}")
 
 
 def release(conn, lock_key: str, holder: str) -> None:

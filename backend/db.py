@@ -2,12 +2,13 @@
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data"
-DB_PATH = DATA / "app.db"
+DB_PATH = Path(os.environ.get("EFFLUENT_DB_PATH", DATA / "app.db"))
 FIXTURES = ROOT / "fixtures"
 FRONTEND = ROOT / "frontend"
 
@@ -32,10 +33,15 @@ PRODUCT_META = {
 
 
 def connect() -> sqlite3.Connection:
-    DATA.mkdir(parents=True, exist_ok=True)
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(DB_PATH, timeout=30)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys=ON")
+    conn.execute("PRAGMA busy_timeout=30000")
+    try:
+        conn.execute("PRAGMA journal_mode=WAL")
+    except sqlite3.DatabaseError:
+        pass
     return conn
 
 
@@ -186,6 +192,31 @@ CREATE TABLE IF NOT EXISTS sludge_plan_jobs(
   detail TEXT,
   created_at TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS daycut_windows(
+  day TEXT PRIMARY KEY,
+  status TEXT NOT NULL,
+  closed_at TEXT,
+  closed_by TEXT,
+  note TEXT,
+  minutes TEXT,
+  reopened_at TEXT,
+  updated_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS daycut_flow_drafts(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  day TEXT NOT NULL,
+  sample_id INTEGER NOT NULL,
+  sample_code TEXT NOT NULL,
+  permit_ref TEXT NOT NULL,
+  flow_m3h REAL NOT NULL,
+  status TEXT NOT NULL,
+  note TEXT,
+  author TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  promoted_at TEXT,
+  FOREIGN KEY(sample_id) REFERENCES sample_batches(id)
+);
+CREATE INDEX IF NOT EXISTS idx_daycut_drafts_day ON daycut_flow_drafts(day, status);
 """
 
 
@@ -442,6 +473,28 @@ def seed_lineage(conn: sqlite3.Connection) -> None:
         )
 
 
+def seed_daycuts(conn: sqlite3.Connection) -> None:
+    for row in _load_json("daycuts.json"):
+        if conn.execute(
+            "SELECT day FROM daycut_windows WHERE day=?", (row["day"],)
+        ).fetchone():
+            continue
+        conn.execute(
+            """INSERT INTO daycut_windows(day,status,closed_at,closed_by,note,minutes,
+               reopened_at,updated_at) VALUES (?,?,?,?,?,?,?,?)""",
+            (
+                row["day"],
+                row.get("status", "关闭"),
+                row.get("closed_at"),
+                row.get("closed_by"),
+                row.get("note", ""),
+                row.get("minutes", ""),
+                row.get("reopened_at"),
+                row.get("closed_at") or now_iso(),
+            ),
+        )
+
+
 def init_db() -> None:
     with connect() as conn:
         conn.executescript(SCHEMA)
@@ -454,6 +507,7 @@ def init_db() -> None:
         seed_releases(conn)
         seed_seals(conn)
         seed_lineage(conn)
+        seed_daycuts(conn)
         conn.commit()
 
 

@@ -98,7 +98,10 @@ def me(authorization: AuthHeader = None):
 @router.get("/api/dashboard")
 def dashboard(authorization: AuthHeader = None):
     require_user(authorization)
-    from db import dashboard_stats
+    from db import connect, dashboard_stats
+    from daycut_core import daycut_snapshot
 
     with connect() as conn:
-        return dashboard_stats(conn)
+        data = dashboard_stats(conn)
+        data["daycut"] = daycut_snapshot(conn)
+        return data
